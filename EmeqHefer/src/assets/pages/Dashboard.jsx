@@ -57,7 +57,18 @@ export default function Dashboard() {
           setTodayTemp(avgTempToday);
           setTodayDate(todayString);
         } else {
-          console.warn("לא נמצאה תחזית מזג אוויר ליום הנוכחי.");
+          console.warn(
+            "לא נמצאה תחזית מדויקת ליום הנוכחי — נבחר את הקרובה ביותר."
+          );
+          if (dailyForecast.length > 0) {
+            const firstForecast = dailyForecast[0];
+            const avgTempClosest = (
+              (firstForecast.tempMax + firstForecast.tempMin) /
+              2
+            ).toFixed(1);
+            setTodayTemp(avgTempClosest);
+            setTodayDate(firstForecast.date);
+          }
         }
       } catch (error) {
         console.error("בעיה בשליפת תחזית מזג האוויר:", error);

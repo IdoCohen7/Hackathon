@@ -26,9 +26,8 @@ const COLORS = [
   "#FFBB28",
 ];
 
-// שמות החודשים בעברית
 const MONTHS_HEBREW = [
-  "", // 0
+  "",
   "ינואר",
   "פברואר",
   "מרץ",
@@ -50,6 +49,7 @@ export default function SettlementPage() {
   const [topicsData, setTopicsData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [avgDurationData, setAvgDurationData] = useState([]);
+  const [predictedDepartment, setPredictedDepartment] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function SettlementPage() {
 
         setTopicsData(topicsRes.data.topics || []);
 
-        // מיפוי חודשי שנה עם שמות חודשים
+        // מיפוי חודשים
         const mappedMonthlyData = (monthlyRes.data.monthly_counts || []).map(
           (item) => ({
             monthNumber: item.month,
@@ -73,7 +73,6 @@ export default function SettlementPage() {
           })
         );
 
-        // סידור לפי החודש הנוכחי תחילה + הצגת שנה
         const today = new Date();
         const oneYearAgo = new Date(today);
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
@@ -101,14 +100,26 @@ export default function SettlementPage() {
 
         setMonthlyData(reorderedMonthlyData);
 
-        // עיבוד ממוצע זמן טיפול
+        // עיבוד זמן טיפול ממוצע
         const mappedAvgDuration = (avgDurationRes.data.avg_durations || []).map(
           (item) => ({
             topic: item.topic,
-            days: parseFloat((item.avgDuration / (60 * 24)).toFixed(2)), // המרה לימים
+            days: parseFloat((item.avgDuration / (60 * 24)).toFixed(2)),
           })
         );
         setAvgDurationData(mappedAvgDuration);
+
+        // קריאה לחיזוי אגף - טמפרטורה קבועה 🌡️
+        const response = await axios.post(
+          "http://localhost:8000/predict-department",
+          {
+            settlement: decodedName,
+            month: today.getMonth() + 1,
+            day_of_week: today.getDay(),
+            temperature: 20.0,
+          }
+        );
+        setPredictedDepartment(response.data.predicted_department);
       } catch (error) {
         console.error("❌ שגיאה בקבלת נתונים על היישוב:", error);
       } finally {
@@ -144,6 +155,21 @@ export default function SettlementPage() {
   return (
     <div className="container mt-4">
       <h2 className="text-2xl font-bold mb-4">מידע על היישוב: {decodedName}</h2>
+
+      {/* כרטיס חיזוי אגף */}
+      {predictedDepartment && (
+        <div className="card p-4 mb-5 shadow-sm">
+          <h4 className="text-lg font-semibold mb-2 text-center">
+            אגף צפוי לטיפול בפנייה 📋
+          </h4>
+          <p
+            className="text-center"
+            style={{ fontSize: "20px", fontWeight: "bold" }}
+          >
+            {predictedDepartment}
+          </p>
+        </div>
+      )}
 
       {/* גרף עוגה - פניות לפי נושא */}
       <div className="card p-4 mb-5 shadow-sm">

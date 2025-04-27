@@ -324,3 +324,85 @@ def get_top_topics_in_exceed():
 
     except Exception as e:
         return {"error": str(e)}
+
+
+# --- טעינת מודל RandomForest חדש לחיזוי אגף --- #
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score
+
+try:
+    rf_requests_data = list(requests_collection.find({}, {"_id": 0}))
+    rf_df = pd.DataFrame(rf_requests_data)
+except Exception:
+    rf_df = None
+
+if rf_df is not None and not rf_df.empty:
+    rf_df.dropna(subset=['settlement', 'department', 'openDate', 'temperature'], inplace=True)
+    rf_df['openDate_dt'] = pd.to_datetime(rf_df['openDate'], errors='coerce')
+    rf_df.dropna(subset=['openDate_dt'], inplace=True)
+
+    rf_df['Month'] = rf_df['openDate_dt'].dt.month
+    rf_df['DayOfWeek'] = rf_df['openDate_dt'].dt.dayofweek
+
+    # תכונות לחיזוי
+    rf_features = rf_df[['settlement', 'Month', 'DayOfWeek', 'temperature']]
+    rf_target = rf_df['department']
+
+    # קידוד
+    settlement_encoder = LabelEncoder()
+    department_encoder = LabelEncoder()
+
+    rf_features['settlement'] = settlement_encoder.fit_transform(rf_features['settlement'])
+    rf_target_encoded = department_encoder.fit_transform(rf_target)
+
+    # אימון המודל
+    X_train_rf, X_test_rf, y_train_rf, y_test_rf = train_test_split(
+        rf_features, rf_target_encoded, test_size=0.2, random_state=42
+    )
+
+    rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+    rf_model.fit(X_train_rf, y_train_rf)
+
+    rf_accuracy = accuracy_score(y_test_rf, rf_model.predict(X_test_rf))
+    print(f"✅ RandomForest model trained. Accuracy: {rf_accuracy:.2%}")
+
+else:
+    rf_model = None
+    settlement_encoder = None
+    department_encoder = None
+
+
+class DepartmentPredictionRequest(BaseModel):
+    settlement: str
+    month: int
+    day_of_week: int
+    temperature: float
+
+
+
+@app.post("/predict-department")
+def predict_department(request: DepartmentPredictionRequest):
+    if rf_model is None:
+        return {"error": "RandomForest model not available."}
+
+    if request.settlement not in settlement_encoder.classes_:
+        return {"error": f"יישוב '{request.settlement}' לא נמצא בדאטה."}
+
+    try:
+        encoded_settlement = settlement_encoder.transform([request.settlement])[0]
+        input_data = pd.DataFrame([[
+            encoded_settlement,
+            request.month,
+            request.day_of_week,
+            request.temperature
+        ]], columns=['settlement', 'Month', 'DayOfWeek', 'temperature'])
+
+        prediction_encoded = rf_model.predict(input_data)
+        predicted_department = department_encoder.inverse_transform(prediction_encoded)[0]
+
+        return {"predicted_department": predicted_department}
+
+    except Exception as e:
+        return {"error": str(e)}
