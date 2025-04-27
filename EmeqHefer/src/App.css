@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* תוספות קטנות אם תרצה */
+body {
+  font-family: "Heebo", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb; /* רקע אפור-לבן נעים */
+  color: #1f2937; /* צבע טקסט כהה (Tailwind gray-800) */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: bold;
+}
+
+a {
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: #3b82f6; /* כחול טיפה יותר חזק ב-hover */
+}

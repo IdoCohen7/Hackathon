@@ -1,0 +1,96 @@
+/* צבעים כלליים */
+:root {
+  --background-color: #fffbeb;
+  --primary-text: #333333;
+  --heading-color: #0054a6;
+  --highlight-color: #0077c8;
+  --border-yellow: #ffe082;
+  --border-green: #4caf50;
+}
+
+/* גוף הדף */
+body {
+  background-color: var(--background-color);
+  color: var(--primary-text);
+  font-family: "Assistant", sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* כותרות */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--heading-color);
+  font-weight: 700;
+}
+
+/* כרטיסים */
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* כרטיסים ב-hover */
+.card:hover {
+  transform: scale(1.02);
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* טייטלים של כרטיסים */
+.card-title {
+  font-size: 1.6rem;
+  color: var(--heading-color);
+  margin-bottom: 1rem;
+}
+
+/* קישורים */
+a {
+  color: var(--highlight-color);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--border-green);
+}
+
+/* גבולות צד לצורך סימון */
+.border-right-yellow {
+  border-right: 5px solid var(--border-yellow);
+  padding-right: 12px;
+}
+
+.border-right-green {
+  border-right: 5px solid var(--border-green);
+  padding-right: 12px;
+}
+
+/* אייקונים/לוגו */
+.logo-hover {
+  transition: all 0.3s ease;
+}
+
+.logo-hover:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* אייקונים של תחזית מזג אוויר */
+.weather-card {
+  padding: 12px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.weather-card:hover {
+  background-color: #f7f7f7;
+  transform: scale(1.05);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
