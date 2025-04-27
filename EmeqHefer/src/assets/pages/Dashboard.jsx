@@ -1,16 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Spinner,
-  ProgressBar,
-} from "react-bootstrap";
-import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
-import WeeklyHighlights from "../components/WeeklyHighlights";
+import { Container, Row, Col, Card, Spinner } from "react-bootstrap";
 import WeatherForecast from "../components/WeatherForcasts";
+import WeeklyHighlights from "../components/WeeklyHighlights";
+import ComplaintMap from "../components/ComplaintMap";
+import RequestStatusCard from "../components/RequestStatusCard";
 import logo from "../images/emeq-hefer-banner.png";
 import axios from "axios";
 import coordinates from "../../data/coordinates.js";
@@ -20,16 +13,6 @@ const longitude = 34.9167;
 
 const settlements = coordinates;
 
-const containerStyle = {
-  width: "100%",
-  height: "60vh",
-};
-
-const center = {
-  lat: latitude,
-  lng: longitude,
-};
-
 const getWeatherIcon = (precipitation) => {
   if (precipitation > 5) return "🌧️";
   if (precipitation > 0) return "🌦️";
@@ -37,10 +20,8 @@ const getWeatherIcon = (precipitation) => {
 };
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [forecast, setForecast] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeMarker, setActiveMarker] = useState(null);
   const [inProgressCount, setInProgressCount] = useState(null);
   const [predictions, setPredictions] = useState([]);
   const [totalPredicted, setTotalPredicted] = useState(0);
@@ -65,7 +46,6 @@ export default function Dashboard() {
 
         const today = new Date();
         const todayString = today.toISOString().split("T")[0];
-
         const todayIndex = daily.time.findIndex((d) => d === todayString);
 
         if (todayIndex !== -1) {
@@ -73,7 +53,7 @@ export default function Dashboard() {
             (daily.temperature_2m_max[todayIndex] +
               daily.temperature_2m_min[todayIndex]) /
             2
-          ).toFixed(1); // עיגול קל
+          ).toFixed(1);
           setTodayTemp(avgTempToday);
           setTodayDate(todayString);
         } else {
@@ -127,17 +107,6 @@ export default function Dashboard() {
     }
   }, [todayTemp, todayDate]);
 
-  const calculateExceedPercentage = () => {
-    if (inProgressCount && inProgressCount.in_progress_requests_count > 0) {
-      return (
-        (inProgressCount.in_progress_exceed_count /
-          inProgressCount.in_progress_requests_count) *
-        100
-      );
-    }
-    return 0;
-  };
-
   return (
     <Container className="mt-4 text-center">
       <Row className="mb-4">
@@ -164,6 +133,12 @@ export default function Dashboard() {
         </Col>
       </Row>
 
+      <Row className="mt-4">
+        <Col>
+          <RequestStatusCard inProgressCount={inProgressCount} />
+        </Col>
+      </Row>
+
       <Row>
         <Col>
           <WeeklyHighlights predictions={predictions} total={totalPredicted} />
@@ -172,110 +147,32 @@ export default function Dashboard() {
 
       <Row className="mt-4">
         <Col>
-          <Card className="shadow-sm p-3 mb-4">
-            <Card.Title>סטטוס בפניות טיפול</Card.Title>
-            {inProgressCount !== null ? (
-              <div>
-                <p
-                  style={{
-                    fontSize: "22px",
-                    fontWeight: "bold",
-                    color: "green",
-                    marginBottom: "10px",
-                  }}
-                >
-                  פניות ללא חריגה: {inProgressCount.in_progress_no_exceed_count}
-                </p>
-                <p
-                  style={{
-                    fontSize: "22px",
-                    fontWeight: "bold",
-                    color: "red",
-                  }}
-                >
-                  פניות עם חריגה: {inProgressCount.in_progress_exceed_count}
-                </p>
-                <p
-                  style={{ marginTop: "10px", fontSize: "16px", color: "#555" }}
-                >
-                  סה"כ פניות בטיפול:{" "}
-                  {inProgressCount.in_progress_requests_count}
-                </p>
-
-                <ProgressBar className="mt-3">
-                  <ProgressBar
-                    now={100 - calculateExceedPercentage()}
-                    variant="success"
-                    label={`${Math.round(
-                      100 - calculateExceedPercentage()
-                    )}% תקינות`}
-                    key={1}
-                  />
-                  <ProgressBar
-                    now={calculateExceedPercentage()}
-                    variant="danger"
-                    label={`${Math.round(calculateExceedPercentage())}% חריגה`}
-                    key={2}
-                  />
-                </ProgressBar>
-              </div>
-            ) : (
-              <Spinner animation="border" variant="primary" />
-            )}
-          </Card>
-        </Col>
-      </Row>
-
-      <Row className="mt-4">
-        <Col>
           <Card className="shadow-sm">
             <Card.Body>
-              <GoogleMap
-                mapContainerStyle={containerStyle}
-                center={center}
-                zoom={12}
-              >
-                {settlements.map((settlement) => {
-                  const prediction = predictions.find(
-                    (p) => p.settlement === settlement.name
-                  );
+              {/* 🗺️ מקרא צבעים */}
+              <div style={{ marginBottom: "10px", textAlign: "center" }}>
+                <small>
+                  <span style={{ color: "green", fontWeight: "bold" }}>●</span>{" "}
+                  עד 5 פניות &nbsp;
+                  <span style={{ color: "gold", fontWeight: "bold" }}>
+                    ●
+                  </span>{" "}
+                  6-15 פניות &nbsp;
+                  <span style={{ color: "orange", fontWeight: "bold" }}>
+                    ●
+                  </span>{" "}
+                  16-30 פניות &nbsp;
+                  <span style={{ color: "red", fontWeight: "bold" }}>
+                    ●
+                  </span>{" "}
+                  מעל 30 פניות
+                </small>
+              </div>
 
-                  return (
-                    <Marker
-                      key={settlement.name}
-                      position={{ lat: settlement.lat, lng: settlement.lng }}
-                      onMouseOver={() => setActiveMarker(settlement.name)}
-                      onMouseOut={() => setActiveMarker(null)}
-                      onClick={() =>
-                        navigate(
-                          `/settlement/${encodeURIComponent(settlement.name)}`
-                        )
-                      }
-                    >
-                      {activeMarker === settlement.name && (
-                        <InfoWindow
-                          position={{
-                            lat: settlement.lat,
-                            lng: settlement.lng,
-                          }}
-                          onCloseClick={() => setActiveMarker(null)}
-                        >
-                          <div style={{ minWidth: "140px" }}>
-                            <h6 className="mb-1">{settlement.name}</h6>
-                            {prediction ? (
-                              <p className="mb-0">
-                                פניות חזויות: {prediction.predicted_complaints}
-                              </p>
-                            ) : (
-                              <p className="mb-0">אין תחזית זמינה</p>
-                            )}
-                          </div>
-                        </InfoWindow>
-                      )}
-                    </Marker>
-                  );
-                })}
-              </GoogleMap>
+              <ComplaintMap
+                settlements={settlements}
+                predictions={predictions}
+              />
             </Card.Body>
           </Card>
         </Col>
