@@ -1,3 +1,8 @@
 fastapi
 uvicorn
 pymongo
+pandas
+xgboost
+python-multipart
+scikit-learn
+pydantic
